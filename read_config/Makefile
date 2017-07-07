@@ -1,9 +1,11 @@
-main:main.o read_conf.o
-	@gcc -o main main.o read_conf.o
-main.o:main.c read_conf.h
-	@gcc -c main.c
-read_conf.o:read_conf.c read_conf.h
-	@gcc -c read_conf.c
-
+# 指令编译及选项
+CC=gcc
+CFLAGS=-Wall -std=gnu99
+#-Wall:提示所有waring、gnu99:对应 C99 的 GNU 扩展
+TARGET=main
+SRCS := $(wildcard *.c)
+OBJS := $(SRCS:.c=.o)
+$(TARGET):$(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
 clean:
 	rm -f *.o main
