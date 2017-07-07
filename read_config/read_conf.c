@@ -9,11 +9,23 @@
 #include <ctype.h>
 
 #include "read_conf.h"
-static struct config_t config;
+struct config_t config;
 
-void print_config(void)
+void print_config(struct config_t *conf)
 {
-	printf("NULL\n");
+	struct in_addr *ip = (struct in_addr *)&(conf->ipaddr);
+	if(!conf)
+		printf("NULL\n");
+	else{
+		printf("\tkeyword\t  value\n");
+		printf("\t----------------------\n");
+		printf("\t yesno \t  %s \n", conf->yesno ? "yes":"no");
+		printf("\t ipaddr\t  %s \n", inet_ntoa(*ip));
+		printf("\t name  \t  %s \n", conf->yourname);
+		printf("\t id    \t  %lu \n", conf->id);
+		printf("\t mac   \t  %02x:%02x:%02x:%02x:%02x:%02x \n", conf->mac[0],\
+		conf->mac[1], conf->mac[2], conf->mac[3], conf->mac[4], conf->mac[5]);
+	}
 }
 
 static int hex2dec(char c)
@@ -97,7 +109,8 @@ static int read_ip(char *line, void *dest)
 
 static int read_str(char *line, void *dest)
 {
-	memcpy(dest, line , 16);
+	char *arg = dest;
+	strncpy(arg, line, 16);
 	return 1;
 }
 
@@ -110,9 +123,17 @@ static int read_mac(char *line, void *dest)
 	{	
 		tens = hex2dec(line[j]);
 		ones = hex2dec(line[j+1]);
-		arg[i] = tens*16 + ones;
+		arg[i++] = tens*16 + ones;
 	}
 	return 1;
+}
+
+static int read_u32(char *line, void *dest)
+{
+	unsigned long *arg = dest;
+	char *endptr;
+	*arg = strtoul(line, &endptr, 0);
+	return endptr[0] == '\0';
 }
 
 static struct config_keyword keywords[] = {
@@ -120,6 +141,7 @@ static struct config_keyword keywords[] = {
 	{"ipaddr",   read_ip,    &(config.ipaddr),   "192.168.0.1"},
 	{"name",     read_str,   &(config.yourname), "fflyelephant"},
 	{"macaddr",  read_mac,   &(config.mac),      "000000000000"},
+	{"numberID", read_u32,   &(config.id),       "20171111"},
 	{"",		 NULL,		 NULL,				 ""}
 };
 
@@ -140,14 +162,15 @@ int read_config(FILE *fp)
 	while(fgets(buffer, 80, fp)) {
 		/* 替换行尾换行符为'\0' */
 		if(strchr(buffer, '\n'))  *(strchr(buffer, '\n')) = '\0';
-		token = buffer + strspn(buffer, " ");/* 跳过行首的空格 */
+		token = buffer + strspn(buffer, " \t");/* 跳过行首的空格 */
 		if(*token == '#') continue;/* #起始的行跳过 */
 
-		line = token + strcspn(token, " ");
+		line = token + strcspn(token, " \t=");
 		if(*line == '\0') continue;/* 没有value的也跳过 */
 		*line++ = '\0';
 
-		line = line + strspn(line, " ");
+		line = line + strspn(line, " \t=");
+		/* 去除line后边的空字符 */
 		for(i=strlen(line); i>0 && isspace(line[i-1]); i--)
 			line[i-1] = '\0';
 
@@ -162,8 +185,6 @@ int read_config(FILE *fp)
 				}
 			}
 		}
-		printf("token:%s\n", token);
-		printf("line:%s\n", line);
 	};
 	return 0;
 }

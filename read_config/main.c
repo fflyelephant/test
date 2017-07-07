@@ -21,6 +21,6 @@ int main(int argc, char** argv)
 		read_config(conf_fp);
 	}
 	if(conf_fp != NULL) fclose(conf_fp);
-	print_config();
+	print_config(&config);
 	return 0;
 }
