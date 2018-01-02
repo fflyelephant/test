@@ -1,0 +1,7 @@
+#imp1k
+    生成imp1k.ko
+#imp1u
+    生成imp1u应用程序
+
+#imp1.h 文件被上面两个程序引用
+#实现了使用setsockopt函数在内核与用户空间通信
